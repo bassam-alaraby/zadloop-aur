@@ -1,0 +1,9 @@
+# Downloaded upstream installers and packages
+*.deb
+*.rpm
+*.AppImage
+
+# makepkg build directories and package archives
+/pkg/
+/src/
+*.pkg.tar.*

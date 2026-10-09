@@ -1,0 +1,15 @@
+pkgbase = zadloop
+	pkgdesc = Coding agent that starts in Arabic
+	pkgver = 0.5.0
+	pkgrel = 1
+	url = https://zadloop.com/
+	arch = x86_64
+	license = custom
+	makedepends = binutils
+	makedepends = libarchive
+	depends = glibc
+	options = !strip
+	source = zadloop-0.5.0-x64.deb::https://zadloop.com/download/linux/deb
+	sha256sums = SKIP
+
+pkgname = zadloop

@@ -1,87 +1,70 @@
-# ZadLoop Arch / AUR draft
+# ZadLoop for Arch Linux / Omarchy
 
-This is a staging draft, not ready to publish. It repackages the official
-Debian package because the vendor currently offers `.deb` and `.rpm` Linux
-downloads but no source archive or Arch package.
+This AUR package repackages the official x86_64 Debian payload. The package
+contents identify the application as Electron, with the app installed under
+`/opt/ZadLoop`, a desktop entry and icon, and a bundled Chromium/Electron
+runtime.
 
-## What is confirmed
+## Package facts verified from ZadLoop 0.5.0
 
-- Official download page lists ZadLoop 0.5.0 for x64.
-- Linux targets listed by the vendor: Ubuntu 24.04, Debian 13, Fedora 40+.
-- The Debian link resolves through the official page to
-  `https://zadloop.com/download/linux/deb`; the RPM link is
-  `https://zadloop.com/download/linux/rpm`.
-- Vendor says ZadLoop updates itself and requests the package manager to
-  install updates. This behavior must be tested on Arch; it may conflict with
-  pacman ownership and should be disabled or addressed before publishing.
+- Debian control metadata: package `zadloop`, version `0.5.0`, architecture
+  `amd64`, MIT license.
+- Declared Debian dependencies: GTK 3, libnotify, NSS, XScreenSaver, XTest,
+  xdg-utils, AT-SPI, UUID, libsecret, bubblewrap, and glibc 2.39 or newer.
+- The main ELF also needs ALSA, CUPS, GBM/Mesa, D-Bus, and systemd's udev
+  library. `PKGBUILD` maps these to Arch package names.
+- The Debian post-install script creates `/usr/bin/zadloop`, adjusts the
+  Electron `chrome-sandbox` mode according to user-namespace availability,
+  refreshes desktop/MIME databases, and conditionally installs an AppArmor
+  profile. The Arch package ships the executable symlink and handles the
+  sandbox mode through `zadloop.install`; it does not run the Debian scripts.
+- SHA-256 for the provided official `ZadLoop-0.5.0-x64.deb`:
+  `b16b8fa217d568f28dffdc55a8c0be6577fc938e0b5cde88af1d9e870a00df53`.
+- `.gitignore` excludes `.deb`, `.rpm`, `.AppImage`, and makepkg build output.
+  The downloaded `.deb` is present locally but is not tracked by Git.
 
-## Not confirmed; required before AUR
+The vendor's download page lists Linux 0.5.0 for x64, supports Ubuntu 24.04,
+Debian 13, and Fedora 40+, and says the app updates itself through the system
+package manager. The embedded updater points at
+`https://releases.zadloop.com/desktop/v1/stable/linux/x64/`. Its behavior on
+Arch has not been run or verified; test it in a disposable Arch/Omarchy VM
+before publishing, especially to confirm it does not try to install a DEB or
+RPM outside pacman.
 
-The official package download endpoint could not be fetched in this run: the
-shell request returned HTTP 403 and the in-app browser blocked direct download.
-Therefore the package contents, exact package format internals, implementation
-technology (Electron/Tauri/native), runtime dependencies, desktop/icon paths,
-update mechanism, package licensing details, final asset URL, and SHA-256 are
-not verified. `depends=('glibc')` and `sha256sums=('SKIP')` in the PKGBUILD are
-explicit placeholders. Do not submit this draft to the AUR in this state.
+## Build and verify locally
 
-Once the `.deb` is available locally, inspect it without installing:
+On an Arch Linux or Omarchy system with `base-devel` installed:
 
 ```sh
-ar t ZadLoop-0.5.0-x64.deb
-mkdir -p deb-inspect
-bsdtar -xf ZadLoop-0.5.0-x64.deb -C deb-inspect
-bsdtar -xOf deb-inspect/control.tar.* ./control
-find deb-inspect -type f -print
-find deb-inspect -type f -exec file {} +
+makepkg --verifysource
+makepkg --syncdeps --cleanbuild
 ```
 
-Use `readelf -d` on ELF executables and shared libraries to identify shared
-library needs. Check Debian control `Depends`, maintainer scripts, desktop
-entry, icons, bundled runtime, and updater behavior. Map only actual runtime
-requirements to Arch packages, pin a version-specific upstream asset URL if
-available, calculate its SHA-256, and replace both placeholders in `PKGBUILD`.
-Do not execute binaries or maintainer scripts just to inspect the package.
+The SHA-256 is pinned in `PKGBUILD`. The source URL is ZadLoop's official
+download endpoint; if it starts serving a different release, the checksum
+will fail until the package version and hash are updated.
 
-## Local build and test steps
-
-After completing the metadata and checksum, from this directory:
-
-1. On Arch or Omarchy, install the required tools:
-
-   ```sh
-   sudo pacman -S --needed base-devel namcap
-   ```
-
-2. Run `makepkg --verifysource` to check the source URL and checksum.
-3. Run `makepkg --syncdeps --cleanbuild` to build the package.
-4. Run `namcap PKGBUILD zadloop-*.pkg.tar.zst` and resolve findings.
-5. In a disposable Arch VM, install with
-   `sudo pacman -U ./zadloop-*.pkg.tar.zst`; launch ZadLoop, check its desktop
-   entry and icons, test core flows and restart behavior, and inspect whether
-   its updater invokes `apt`, `dnf`, `dpkg`, or `rpm`.
-6. Remove it with `sudo pacman -Rns zadloop` and confirm package-owned files
-   were removed cleanly.
-7. Regenerate `.SRCINFO` using `makepkg --printsrcinfo > .SRCINFO` after all
-   metadata is final.
-
-## Publish after local verification
-
-After the maintainer decides to publish, configure an AUR account and SSH key.
-Then, from a separate clean directory (these commands publish externally):
+If `namcap` is installed, review the recipe and built archive:
 
 ```sh
-mkdir zadloop-aur && cd zadloop-aur
-git init -b master
-git remote add origin ssh://aur@aur.archlinux.org/zadloop.git
-cp /absolute/path/to/final/PKGBUILD .
+namcap PKGBUILD zadloop-*.pkg.tar.zst
+```
+
+Then install and test the resulting package in a disposable Arch/Omarchy VM,
+including the app launcher, core UI, sandbox behavior, and updater. Do not
+install it on a daily-use system until that check is complete. Remove the test
+package with `sudo pacman -Rns zadloop`.
+
+Regenerate package metadata after changing `PKGBUILD`:
+
+```sh
 makepkg --printsrcinfo > .SRCINFO
-git diff --check
-git diff -- PKGBUILD .SRCINFO
-git add PKGBUILD .SRCINFO
-git commit -m 'Initial import'
-git push -u origin master
 ```
 
-Replace the example path with this directory's path. The final `git push`
-publishes the package; it has not been run.
+## AUR publishing
+
+The project working tree is connected to its GitHub remote. AUR is a separate
+Git repository. To publish, first confirm the Arch VM checks, then follow the
+AUR submission process for the package name `zadloop`. Keep the `.deb` out of
+the repository; AUR users download it from ZadLoop's official endpoint via
+`PKGBUILD`. No AUR push has been made.

@@ -1,70 +1,98 @@
-# ZadLoop for Arch Linux / Omarchy
+# ZadLoop for Arch Linux
 
-This AUR package repackages the official x86_64 Debian payload. The package
-contents identify the application as Electron, with the app installed under
-`/opt/ZadLoop`, a desktop entry and icon, and a bundled Chromium/Electron
-runtime.
+Unofficial experimental packaging of [ZadLoop](https://zadloop.com/) for Arch
+Linux and Arch-based distributions such as Omarchy.
 
-## Package facts verified from ZadLoop 0.5.0
+> **Experimental release — version 0.5.0**
+>
+> This community package is not affiliated with or supported by ZadLoop. The
+> upstream Linux downloads currently target Debian/Ubuntu and Fedora; Arch
+> Linux is not listed as an officially supported distribution. Use it for
+> evaluation and report packaging issues through this repository.
 
-- Debian control metadata: package `zadloop`, version `0.5.0`, architecture
-  `amd64`, MIT license.
-- Declared Debian dependencies: GTK 3, libnotify, NSS, XScreenSaver, XTest,
-  xdg-utils, AT-SPI, UUID, libsecret, bubblewrap, and glibc 2.39 or newer.
-- The main ELF also needs ALSA, CUPS, GBM/Mesa, D-Bus, and systemd's udev
-  library. `PKGBUILD` maps these to Arch package names.
-- The Debian post-install script creates `/usr/bin/zadloop`, adjusts the
-  Electron `chrome-sandbox` mode according to user-namespace availability,
-  refreshes desktop/MIME databases, and conditionally installs an AppArmor
-  profile. The Arch package ships the executable symlink and handles the
-  sandbox mode through `zadloop.install`; it does not run the Debian scripts.
-- SHA-256 for the provided official `ZadLoop-0.5.0-x64.deb`:
-  `b16b8fa217d568f28dffdc55a8c0be6577fc938e0b5cde88af1d9e870a00df53`.
-- `.gitignore` excludes `.deb`, `.rpm`, `.AppImage`, and makepkg build output.
-  The downloaded `.deb` is present locally but is not tracked by Git.
+## Package status
 
-The vendor's download page lists Linux 0.5.0 for x64, supports Ubuntu 24.04,
-Debian 13, and Fedora 40+, and says the app updates itself through the system
-package manager. The embedded updater points at
-`https://releases.zadloop.com/desktop/v1/stable/linux/x64/`. Its behavior on
-Arch has not been run or verified; test it in a disposable Arch/Omarchy VM
-before publishing, especially to confirm it does not try to install a DEB or
-RPM outside pacman.
+- Architecture: `x86_64`
+- Packaging source: the official ZadLoop Debian package, downloaded during the
+  build and verified against a pinned SHA-256 checksum.
+- Application format: Electron desktop application.
+- Installed size: approximately 1.14 GiB.
+- AUR status: not published yet.
 
-## Build and verify locally
+The Debian package itself is not included in this repository. The build recipe
+retrieves it from ZadLoop's official download endpoint. The Arch package
+declares the system libraries needed by the bundled application and provides a
+`zadloop` command and desktop entry.
 
-On an Arch Linux or Omarchy system with `base-devel` installed:
+## Build and install
+
+On an Arch Linux or Omarchy `x86_64` system, install the build tools and clone
+this repository:
+
+```sh
+sudo pacman -S --needed base-devel git
+git clone https://github.com/bassam-alaraby/zadloop-aur.git
+cd zadloop-aur
+makepkg -si --cleanbuild --clean
+```
+
+Run `makepkg` as your regular user, without `sudo`. It downloads the official
+Debian package, verifies its checksum, builds the Arch package, and installs it
+after a successful build. Allow additional free disk space for the downloaded
+archive, build files, and installed application.
+
+Launch ZadLoop from the application menu or run:
+
+```sh
+zadloop
+```
+
+For an initial evaluation, use a disposable project or folder and review the
+selected workspace access mode before asking the application to make changes.
+The in-app updater has not been verified on Arch; use package updates and do
+not approve an in-app update until Arch behavior is confirmed.
+
+## Remove
+
+```sh
+sudo pacman -Rns zadloop
+```
+
+This removes ZadLoop and dependencies that were installed automatically for it
+and are no longer required by another package. It does not normally remove
+personal application data in your home directory.
+
+## Package maintenance
+
+Verify that the source download matches the checksum in `PKGBUILD`:
 
 ```sh
 makepkg --verifysource
+```
+
+Build the package without installing it:
+
+```sh
 makepkg --syncdeps --cleanbuild
 ```
 
-The SHA-256 is pinned in `PKGBUILD`. The source URL is ZadLoop's official
-download endpoint; if it starts serving a different release, the checksum
-will fail until the package version and hash are updated.
-
-If `namcap` is installed, review the recipe and built archive:
+If `namcap` is installed, check the recipe and the resulting package archive:
 
 ```sh
 namcap PKGBUILD zadloop-*.pkg.tar.zst
 ```
 
-Then install and test the resulting package in a disposable Arch/Omarchy VM,
-including the app launcher, core UI, sandbox behavior, and updater. Do not
-install it on a daily-use system until that check is complete. Remove the test
-package with `sudo pacman -Rns zadloop`.
-
-Regenerate package metadata after changing `PKGBUILD`:
+After changing `PKGBUILD`, regenerate `.SRCINFO` before committing:
 
 ```sh
 makepkg --printsrcinfo > .SRCINFO
 ```
 
-## AUR publishing
+The 0.5.0 package has been built and received a basic launch and file-creation
+smoke test. Broader application testing and verification of the in-app update
+flow remain outstanding.
 
-The project working tree is connected to its GitHub remote. AUR is a separate
-Git repository. To publish, first confirm the Arch VM checks, then follow the
-AUR submission process for the package name `zadloop`. Keep the `.deb` out of
-the repository; AUR users download it from ZadLoop's official endpoint via
-`PKGBUILD`. No AUR push has been made.
+## License
+
+The package recipe is licensed under MIT. ZadLoop is a separate upstream
+application and is distributed under its own license and terms.

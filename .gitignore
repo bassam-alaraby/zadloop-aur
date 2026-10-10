@@ -7,3 +7,7 @@
 /pkg/
 /src/
 *.pkg.tar.*
+
+# Ignore the following files if they exist
+*.log
+*.txt

@@ -1,9 +1,9 @@
-# ZadLoop for Arch Linux
+# ZadLoop for Arch Linux (zadloop-bin)
 
-Unofficial experimental packaging of [ZadLoop](https://zadloop.com/) for Arch
+Unofficial, experimental packaging of [ZadLoop](https://zadloop.com/) for Arch
 Linux and Arch-based distributions such as Omarchy.
 
-> **Experimental release — version 0.5.0**
+> **Experimental release — version 0.5.1**
 >
 > This community package is not affiliated with or supported by ZadLoop. The
 > upstream Linux downloads currently target Debian/Ubuntu and Fedora; Arch
@@ -12,87 +12,76 @@ Linux and Arch-based distributions such as Omarchy.
 
 ## Package status
 
+- Package name: `zadloop-bin` (provides and conflicts with `zadloop`)
 - Architecture: `x86_64`
-- Packaging source: the official ZadLoop Debian package, downloaded during the
-  build and verified against a pinned SHA-256 checksum.
-- Application format: Electron desktop application.
-- Installed size: approximately 1.14 GiB.
+- Source: the official ZadLoop Debian package, downloaded during the build
+  from a version-specific URL on `releases.zadloop.com` and verified against a
+  pinned SHA-256 checksum.
+- Application format: Electron desktop application (installed to `/opt/ZadLoop`).
+- Installed size: approximately 1.1 GiB.
 - AUR status: not published yet.
 
-The Debian package itself is not included in this repository. The build recipe
-retrieves it from ZadLoop's official download endpoint. The Arch package
-declares the system libraries needed by the bundled application and provides a
-`zadloop` command and desktop entry.
+The Debian package is not included in this repository. The package provides a
+`zadloop` command and a desktop entry.
 
 ## Build and install
 
-On an Arch Linux or Omarchy `x86_64` system, install the build tools and clone
-this repository:
-
 ```sh
 sudo pacman -S --needed base-devel git
-git clone https://github.com/bassam-alaraby/zadloop-aur.git
-cd zadloop-aur
-makepkg -si --cleanbuild --clean
+git clone https://github.com/bassam-alaraby/zadloop-bin.git
+cd zadloop-bin
+makepkg -si
 ```
 
-Run `makepkg` as your regular user, without `sudo`. It downloads the official
-Debian package, verifies its checksum, builds the Arch package, and installs it
-after a successful build. Allow additional free disk space for the downloaded
-archive, build files, and installed application.
+Run `makepkg` as your regular user, without `sudo`. Make sure you have enough
+free disk space for the downloaded archive, the build files and the installed
+application.
 
-Launch ZadLoop from the application menu or run:
-
-```sh
-zadloop
-```
+Launch ZadLoop from the application menu or run `zadloop`.
 
 For an initial evaluation, use a disposable project or folder and review the
 selected workspace access mode before asking the application to make changes.
-The in-app updater has not been verified on Arch; use package updates and do
-not approve an in-app update until Arch behavior is confirmed.
+
+## Updates
+
+The in-app updater is disabled in this package: the updater configuration
+(`app-update.yml`) is removed during packaging, so updates are delivered
+through the package manager instead. When a new ZadLoop version is released,
+this package must be updated (`pkgver`, checksum, `.SRCINFO`) before you can
+upgrade.
 
 ## Remove
 
 ```sh
-sudo pacman -Rns zadloop
+sudo pacman -Rns zadloop-bin
 ```
 
-This removes ZadLoop and dependencies that were installed automatically for it
-and are no longer required by another package. It does not normally remove
-personal application data in your home directory.
+This removes ZadLoop and dependencies that were installed automatically for it.
+It does not normally remove personal application data in your home directory.
 
 ## Package maintenance
 
-Verify that the source download matches the checksum in `PKGBUILD`:
+Update to a new upstream version:
 
 ```sh
-makepkg --verifysource
-```
-
-Build the package without installing it:
-
-```sh
-makepkg --syncdeps --cleanbuild
-```
-
-If `namcap` is installed, check the recipe and the resulting package archive:
-
-```sh
-namcap PKGBUILD zadloop-*.pkg.tar.zst
-```
-
-After changing `PKGBUILD`, regenerate `.SRCINFO` before committing:
-
-```sh
+# edit pkgver in PKGBUILD, then:
+updpkgsums
 makepkg --printsrcinfo > .SRCINFO
+makepkg -sf
 ```
 
-The 0.5.0 package has been built and received a basic launch and file-creation
-smoke test. Broader application testing and verification of the in-app update
-flow remain outstanding.
+Check the recipe and the resulting package (`namcap` reports many warnings
+about the bundled Python/Node runtime; these come from the upstream package):
+
+```sh
+namcap PKGBUILD zadloop-bin-*.pkg.tar.zst
+```
+
+Testing so far: the package builds and installs. Broader application testing
+is still in progress.
 
 ## License
 
-The package recipe is licensed under MIT. ZadLoop is a separate upstream
-application and is distributed under its own license and terms.
+The package recipe (`PKGBUILD`, `zadloop.install`, this README) is licensed
+under MIT. ZadLoop itself is proprietary software distributed under its own
+terms; this repository does not redistribute any ZadLoop binaries.
